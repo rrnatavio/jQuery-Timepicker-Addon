@@ -124,6 +124,7 @@ $.extend(Timepicker.prototype, {
 	formattedTime: '',
 	formattedDateTime: '',
 	timezoneList: null,
+	useTimeDropdown: false,
 
 	/* Override the default settings for all instances of the time picker.
 	   @param  settings  object - the new settings to use as defaults (anonymous object)
@@ -392,6 +393,24 @@ $.extend(Timepicker.prototype, {
 
 				html += '</tr></table></div>';
 			}
+			//TODO: consider implementing 'slider'-like script to separate the dropdown codes from this script
+			if (o.showHour && tp_inst._defaults.useTimeDropdown) {
+				var interval = o.hourGrid ? parseInt(o.hourGrid,10) : 1;
+				html += '<div style="padding-left: 1px"><select class="ui-tpicker-grid-label">';
+				for (var h = o.hourMin; h <= hourMax; h += interval) {
+					hourGridSize++;
+					var tmph = (o.ampm && h > 12) ? h-12 : h;
+					if (tmph < 10) tmph = '0' + tmph;
+					if (o.ampm) {
+						if (h == 0) tmph = 12 +'a';
+						else if (h < 12) tmph += 'a';
+						else tmph += 'p';
+					}
+					html += '<option value="' + tmph + '">' + tmph + '</option>';
+				}
+				
+				html += '</select></div>';
+			}
 			html += '</dd>';
 
 			// Minutes
@@ -409,6 +428,17 @@ $.extend(Timepicker.prototype, {
 				}
 
 				html += '</tr></table></div>';
+			}
+			//TODO: consider implementing 'slider'-like script to separate the dropdown codes from this script
+			if (o.showMinute && tp_inst._defaults.useTimeDropdown) {
+				var interval = o.minuteGrid ? parseInt(o.minuteGrid,10) : 1;
+				html += '<div style="padding-left: 1px"><select class="ui-tpicker-grid-label">';
+				for (var m = o.minuteMin; m <= minMax; m += interval) {
+					minuteGridSize++;
+					var currMin = ((m < 10) ? '0' : '') + m ;
+					html += '<option value="' + currMin + '">' + currMin + '</option>';
+				}
+				html += '</select></div>';
 			}
 			html += '</dd>';
 
@@ -428,6 +458,17 @@ $.extend(Timepicker.prototype, {
 
 				html += '</tr></table></div>';
 			}
+			//TODO: consider implementing 'slider'-like script to separate the dropdown codes from this script
+			if (o.showSecond && tp_inst._defaults.useTimeDropdown) {
+				var interval = o.secondGrid ? parseInt(o.secondGrid,10) : 1;
+				html += '<div style="padding-left: 1px"><select>';
+				for (var s = o.secondMin; s <= secMax; s += interval) {
+					secondGridSize++;
+					var currSec = ((s < 10) ? '0' : '') + s ;
+					html += '<option value="' + currSec + '">' + currSec + '</option>';
+				}
+				html += '</select></div>';
+			}
 			html += '</dd>';
 
 			// Milliseconds
@@ -445,6 +486,17 @@ $.extend(Timepicker.prototype, {
 				}
 
 				html += '</tr></table></div>';
+			}
+			//TODO: consider implementing 'slider'-like script to separate the dropdown codes from this script
+			if (o.showMillisec && tp_inst._defaults.useTimeDropdown) {
+				var interval = o.millisecGrid ? parseInt(o.millisecGrid,10) : 1;
+				html += '<div style="padding-left: 1px"><select>';
+				for (var l = o.millisecMin; l <= millisecMax; l += interval) {
+					millisecGridSize++;
+					var currMSec = ((l < 10) ? '0' : '') + l ;
+					html += '<option value="' + currMSec + '">' + currMSec + '</option>';
+				}
+				html += '</select></div>';
 			}
 			html += '</dd>';
 
@@ -529,9 +581,45 @@ $.extend(Timepicker.prototype, {
 			this.timezone_select.change(function() {
 				tp_inst._onTimeChange();
 			});
-
-			// Add grid functionality
+			
+			//TODO: duplicate codes. refactor
+			if (o.showHour && tp_inst._defaults.useTimeDropdown) {
+				$tp.find(".ui_tpicker_hour select").find("option").each( function(index){
+					$(this).click(function() {
+						var h = $(this).html();
+						if (o.ampm) {
+							var ap = h.substring(2).toLowerCase(),
+								aph = parseInt(h.substring(0,2), 10);
+							if (ap == 'a') {
+								if (aph == 12) h = 0;
+								else h = aph;
+							} else if (aph == 12) h = 12;
+							else h = aph + 12;
+						}
+						tp_inst.hour_slider.slider("option", "value", h);
+						tp_inst._onTimeChange();
+						tp_inst._onSelectHandler();
+					});
+				});
+				$tp.find(".ui_tpicker_hour select").change(function() {
+					//TODO: duplicate code. refactor
+					var h = $(this).val();
+					if (o.ampm) {
+						var ap = h.substring(2).toLowerCase(),
+							aph = parseInt(h.substring(0,2), 10);
+						if (ap == 'a') {
+							if (aph == 12) h = 0;
+							else h = aph;
+						} else if (aph == 12) h = 12;
+						else h = aph + 12;
+					}
+					tp_inst.hour_slider.slider("option", "value", h);
+					tp_inst._onTimeChange();
+					tp_inst._onSelectHandler();
+				});
+			}
 			if (o.showHour && o.hourGrid > 0) {
+				// Add grid functionality
 				size = 100 * hourGridSize * o.hourGrid / (hourMax - o.hourMin);
 
 				$tp.find(".ui_tpicker_hour table").css({
@@ -562,6 +650,21 @@ $.extend(Timepicker.prototype, {
 				});
 			}
 
+			//TODO: duplicate codes. refactor
+			if (o.showMinute && tp_inst._defaults.useTimeDropdown) {
+				$tp.find(".ui_tpicker_minute select").find("option").each(function(index) {
+					$(this).click(function() {
+						tp_inst.minute_slider.slider("option", "value", $(this).html());
+						tp_inst._onTimeChange();
+						tp_inst._onSelectHandler();
+					});
+				});
+				$tp.find(".ui_tpicker_minute select").change(function() {
+					tp_inst.minute_slider.slider("option", "value", $(this).val());
+					tp_inst._onTimeChange();
+					tp_inst._onSelectHandler();
+				});
+			}
 			if (o.showMinute && o.minuteGrid > 0) {
 				size = 100 * minuteGridSize * o.minuteGrid / (minMax - o.minuteMin);
 				$tp.find(".ui_tpicker_minute table").css({
@@ -582,6 +685,21 @@ $.extend(Timepicker.prototype, {
 				});
 			}
 
+			//TODO: duplicate codes. refactor
+			if (o.showSecond && tp_inst._defaults.useTimeDropdown) {
+				$tp.find(".ui_tpicker_second select").find("option").each(function(index) {
+					$(this).click(function() {
+						tp_inst.second_slider.slider("option", "value", $(this).html());
+						tp_inst._onTimeChange();
+						tp_inst._onSelectHandler();
+					});
+				});
+				$tp.find(".ui_tpicker_second select").change(function() {
+					tp_inst.second_slider.slider("option", "value", $(this).val());
+					tp_inst._onTimeChange();
+					tp_inst._onSelectHandler();
+				});
+			}
 			if (o.showSecond && o.secondGrid > 0) {
 				$tp.find(".ui_tpicker_second table").css({
 					width: size + "%",
@@ -601,6 +719,21 @@ $.extend(Timepicker.prototype, {
 				});
 			}
 
+			//TODO: duplicate codes. refactor
+			if (o.showMillisec && tp_inst._defaults.useTimeDropdown) {
+				$tp.find(".ui_tpicker_millisec select").find("option").each(function(index) {
+					$(this).click(function() {
+						tp_inst.millisec_slider.slider("option", "value", $(this).html());
+						tp_inst._onTimeChange();
+						tp_inst._onSelectHandler();
+					});
+				});
+				$tp.find(".ui_tpicker_millisec select").change(function() {
+					tp_inst.millisec_slider.slider("option", "value", $(this).val());
+					tp_inst._onTimeChange();
+					tp_inst._onSelectHandler();
+				});
+			} 
 			if (o.showMillisec && o.millisecGrid > 0) {
 				$tp.find(".ui_tpicker_millisec table").css({
 					width: size + "%",
@@ -641,6 +774,13 @@ $.extend(Timepicker.prototype, {
 			this.second_slider.bind('slidestop',onSelectDelegate);
 			this.millisec_slider.bind('slidestop',onSelectDelegate);
 
+			if (this._defaults.useTimeDropdown) {
+				$tp.find("#ui_tpicker_hour_" + dp_id).hide();
+				$tp.find("#ui_tpicker_minute_" + dp_id).hide();
+				$tp.find("#ui_tpicker_second_" + dp_id).hide();
+				$tp.find("#ui_tpicker_millisec_" + dp_id).hide();
+			}
+			
 			// slideAccess integration: http://trentrichardson.com/2011/11/11/jquery-ui-sliders-and-touch-accessibility/
 			if (this._defaults.addSliderAccess){
 				var sliderAccessArgs = this._defaults.sliderAccessArgs;
